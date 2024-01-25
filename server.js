@@ -22,11 +22,24 @@ db.connect((err) => {
 
 // Route om een boek toe te voegen
 app.post('/add_book', (req, res) => {
-    let book = req.body;
+    let book = {
+        isbn: req.body.isbn,
+        title: req.body.title,
+        description: req.body.description,
+        author: req.body.author,
+        pages: req.body.pages,
+        quantity: req.body.quantity,
+        availability: req.body.quantity // Stel availability in op de ingevoerde quantity
+    };
     let sql = 'INSERT INTO books SET ?';
     db.query(sql, book, (err, result) => {
-        if (err) throw err;
-        res.send('Boek toegevoegd...');
+        if (err) {
+            console.error(err);
+            res.status(500).send('Error adding the book');
+        } else {
+            res.send('Book added to database');
+            console.log('boek is toegevoegd');
+        }
     });
 });
 
@@ -40,14 +53,21 @@ app.get('/get_books', (req, res) => {
     });
 });
 
+
 app.post('/update_availability', (req, res) => {
-    const { id, available } = req.body;
-    let sql = 'UPDATE books SET available = ? WHERE id = ?';
-    db.query(sql, [available, id], (err, result) => {
-        if (err) throw err;
-        res.send('Availability updated');
+    const { id, availability } = req.body;
+    let sql = 'UPDATE books SET availability = ? WHERE id = ?';
+    db.query(sql, [availability, id], (err, result) => {
+        if (err) {
+            console.error(err);
+            res.status(500).send('Error updating availability');
+        } else {
+            res.send('Availability updated');
+            console.log('Availability updated');
+        }
     });
 });
+
 
 const port = 3000;
 app.listen(port, '0.0.0.0', () => {
