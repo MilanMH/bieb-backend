@@ -2,11 +2,20 @@ const express = require('express');
 const mysql = require('mysql');
 const bodyParser = require('body-parser');
 const multer = require('multer');
+const path = require('path');
 
 const app = express();
 app.use(bodyParser.json());
 
-const upload = multer({ dest: 'uploads/' }); // Slaat bestanden op in "uploads" map
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, 'uploads/')
+    },
+    filename: function (req, file, cb) {
+        cb(null, file.fieldname + '-' + Date.now() + path.extname(file.originalname))
+    }
+});
+const upload = multer({ storage: storage });
 
 // MySQL verbinding configureren
 const db = mysql.createConnection({
@@ -22,6 +31,8 @@ db.connect((err) => {
     console.log('MySQL verbonden...');
 });
 
+
+app.use('/uploads', express.static('uploads'));
 // Route om een boek toe te voegen, inclusief afbeelding
 app.post('/add_book', upload.single('image_path'), (req, res) => {
     let imagePath = req.file ? req.file.path : ''; // Pad naar de afbeelding
@@ -57,7 +68,7 @@ app.get('/get_books', (req, res) => {
         if (err) throw err;
         res.json(results.map(book => {
             // Zorg ervoor dat de image_path volledig is als de cover_image_path niet leeg is
-            book.image_path = book.image_path ? `${req.protocol}://${req.get('host')}/${book.image_path}` : null;
+            book.image_path = book.image_path ? `${req.protocol}://${req.get('host')}${book.image_path}` : null;
             return book;
         }));
     });
